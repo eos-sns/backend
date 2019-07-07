@@ -3,11 +3,12 @@ const router = express.Router();
 const userService = require('./user.service');
 const authorize = require('_helpers/authorize');
 const Role = require('_helpers/role');
+const db = require('_helpers/db');
+const User = db.User;
 
 // routes
 router.post('/authenticate', authenticate); // public
 router.post('/register', register); // public
-router.get('/', getAll); // public
 router.get('/', authorize(Role.Admin), getAll); // admin only
 router.get('/current', authorize(), getCurrent); // just authenticated users
 router.get('/:id', authorize(), getById); // just authenticated users
@@ -40,19 +41,23 @@ function getCurrent(req, res, next) {
         .catch(err => next(err));
 }
 
-function _isAuthorized(req) {
-  const currentUser = req.user;
-  const id = parseInt(req.params.id);
+/**
+ * Checks iff current user can see other users data. This should be true
+ * when current user is Admin or the current user is the other user. Should
+ * be false in all other cases.
+ */
+async function _isAuthorized(req) {
+  const currentUserId = req.user.sub;
+  const currentUserData = await User.findById(currentUserId);  // find in db
+  const otherUserId = parseInt(req.params.id);
 
-  // only allow admins to access other user records
-  return !(id !== currentUser.sub && currentUser.role !== Role.Admin);
+  const currentUserIsAdmin = currentUserData.role === Role.Admin;
+  const sameUsers = (currentUserId === otherUserId);
+
+  return (sameUsers || currentUserIsAdmin);
 }
 
 function getById(req, res, next) {
-    if (!_isAuthorized(req)) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
     userService.getById(req.params.id)
         .then(user => user ? res.json(user) : res.sendStatus(404))
         .catch(err => next(err));
