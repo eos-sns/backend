@@ -11,7 +11,8 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use(jwt()); // use JWT auth to secure the api
-app.use('/users', require('./users/users.controller')); // api routes
+app.use('/users', require('./users/users.controller')); // users api routes
+app.use('/search', require('./search/search.controller')); // search api routes
 app.use(errorHandler); // global error handler
 
 // start server
