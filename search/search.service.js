@@ -1,9 +1,15 @@
-﻿module.exports = {
+﻿const rp = require('request-promise');
+
+module.exports = {
   searchByParams
 };
 
-async function searchByParams(params) {
-  return [{
-    status: 'success'
-  }];  // todo ask Flask
+/**
+ * @param params dictionary
+ * @returns {Promise<{status: string}[]>}
+ */
+function searchByParams(params) {
+  return rp.post('http://localhost:9900', {
+    json: params
+  });
 }
