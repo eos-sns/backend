@@ -8,6 +8,7 @@ module.exports = {
   authenticate,
   getAll,
   getById,
+  getByReq,
   create,
   update,
   delete: _delete
@@ -27,6 +28,15 @@ async function authenticate({username, password}) {
 
 async function getAll() {
   return await User.find().select('-hash');
+}
+
+function getIdReq(req) {
+  return req.user.sub;
+}
+
+async function getByReq(req) {
+  const _id = getIdReq(req);
+  return getById(_id);
 }
 
 async function getById(id) {

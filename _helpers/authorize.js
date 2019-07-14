@@ -1,9 +1,14 @@
 const expressJwt = require('express-jwt');
 const {secret} = require('config.json');
-const db = require('_helpers/db');
-const User = db.User;
+const {getByReq} = require('../users/user.service');
+const UNAUTHORIZED_MSG = {message: 'Unauthorized'};
 
 module.exports = authorize;
+
+
+function isUnauthorized(user, roles) {
+  return roles.length && !roles.includes(user.role);
+}
 
 function authorize(roles = []) {
   // roles param can be a single role string (e.g. Role.User or 'User')
@@ -13,21 +18,22 @@ function authorize(roles = []) {
   }
 
   return [
-    // authenticate JWT token and attach user to request object (req.user)
+    // authenticate JWT token and attach user to request object
     expressJwt({secret}),
 
     // authorize based on user role
     async (req, res, next) => {
-      const _id = req.user.sub;
-      const user = await User.findById(_id);  // find in db
-      const inValidRole = roles.length && !roles.includes(user.role);
-      if (inValidRole || !user) {
-        // user's role is not authorized
-        return res.status(401).json({message: 'Unauthorized'});
-      }
+      getByReq(req)
+        .then(user => {
+          const inValidRole = isUnauthorized(user, roles);
+          if (inValidRole || !user) {
+            return res.status(401).json(UNAUTHORIZED_MSG);
+          }
 
-      // authentication and authorization successful
-      next();
+          // authentication and authorization successful
+          next();
+        })
+        .catch(err => next(err));
     }
   ];
 }

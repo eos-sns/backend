@@ -36,7 +36,7 @@ function getAll(req, res, next) {
 }
 
 function getCurrent(req, res, next) {
-  userService.getById(req.user.sub)
+  userService.getByReq(req)
     .then(user => user ? res.json(user) : res.sendStatus(404))
     .catch(err => next(err));
 }
@@ -47,18 +47,17 @@ function getCurrent(req, res, next) {
  * be false in all other cases.
  */
 async function _isAuthorized(req) {
-  const currentUserId = req.user.sub;
-  const currentUserData = await User.findById(currentUserId);  // find in db
+  const currentUser = userService.getByReq(req);  // find in db
   const otherUserId = parseInt(req.params.id);
 
-  const currentUserIsAdmin = currentUserData.role === Role.Admin;
-  const sameUsers = (currentUserId === otherUserId);
+  const currentUserIsAdmin = currentUser.role === Role.Admin;
+  const sameUsers = (currentUser._id === otherUserId);
 
   return (sameUsers || currentUserIsAdmin);
 }
 
 function getById(req, res, next) {
-  userService.getById(req.params.id)
+  userService.getByReq(req)
     .then(user => user ? res.json(user) : res.sendStatus(404))
     .catch(err => next(err));
 }
