@@ -11,11 +11,15 @@ router.post('/', authorize(), search); // just authenticated users
 
 module.exports = router;
 
-function getUserEmail(req) {
+function getUserData(req) {
   return new Promise(function (resolve, reject) {
     getByReq(req)
       .then(user => {
-        resolve(user["email"]);
+        const data = {
+          "email": user["email"],
+          "name": user["firstName"] + " " + user["lastName"]
+        };
+        resolve(data);
       })
       .catch(err => reject(err));
   });
@@ -30,7 +34,7 @@ function onDownloadData(req, downloadResponse, next) {
       }); // todo update mbDownloaded
 
       const msg = getMessageOnStartDownload(user, downloadResponse);
-      sendEmail(user.email, msg);
+      // todo sendEmail(user.email, msg);
     })
     .catch(err => next(err));
 }
@@ -38,20 +42,24 @@ function onDownloadData(req, downloadResponse, next) {
 function search(req, res, next) {
   let searchData = req.body;
 
-  getUserEmail(req).then(
-    email => {
+  getUserData(req).then(
+    data => {
       searchData['user'] = {
-        'email': email
+        'email': data['email'],
+        'name': data['name']
       }; // add email to data
 
       searchByParams(searchData)
         .then(response => {
           onDownloadData(req, response, next);
-          response['email'] = email;  // return email
+          response['email'] = data['email'];  // return email
           res.json(response);
         })
         .catch(err => next(err));
     },
-    err => next(err)
+    err => {
+      console.log(err);
+      next(err);
+    }
   )
 }
