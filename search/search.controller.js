@@ -35,6 +35,7 @@ function onDownloadData(req, downloadResponse, next) {
 
       const msg = getMessageOnStartDownload(user, downloadResponse);
       // todo sendEmail(user.email, msg);
+      // necessary? server does it ... 
     })
     .catch(err => next(err));
 }
