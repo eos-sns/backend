@@ -1,8 +1,0 @@
-﻿{
-  "connectionString": "mongodb://localhost/eos-backend",
-  "secret": "eos-secret",
-  "email": {
-    "user": "eos.cosmosns@gmail.com",
-    "pass": "=p)P2Nq'i;n:rpgD6}zq_>zm=QvM{Qvn"
-  }
-}
