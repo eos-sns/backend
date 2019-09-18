@@ -59,7 +59,6 @@ function search(req, res, next) {
         .catch(err => next(err));
     },
     err => {
-      console.log(err);
       next(err);
     }
   )
