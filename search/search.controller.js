@@ -5,8 +5,9 @@ const {searchByParams} = require('./search.service');
 const {getByReq, update} = require('../users/user.service');
 
 // routes
-// todo grant
-router.post('/', authorize(), search); // just authenticated users
+
+// just authenticated users
+router.post('/', authorize(), search);
 
 module.exports = router;
 

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Role = require('_helpers/role');
+const Role = require('../_helpers/role');
 
 const Schema = mongoose.Schema;
 
@@ -14,9 +14,8 @@ const schema = new Schema({
   role: {type: String, default: Role.User}, // todo enum
 
   // todo sub-schema
-  verified: {type: Boolean, default: true}, // todo verify
-  granted: {type: Boolean, default: false}, // todo check if Admin
-  blocked: {type: Boolean, default: false}, // todo verify
+  authorized: {type: Boolean, default: false}, // todo verify
+
   // todo subSchema
   mbDownloaded: {type: Number, default: 0},
   numDownloads: {type: Number, default: 0}

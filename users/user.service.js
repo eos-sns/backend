@@ -58,7 +58,7 @@ async function getById(id) {
   return await User.findById(id).select('-hash');
 }
 
-async function askAdminToCompleteActivation(userId) {
+async function askAdminToCompleteActivation(user) {
   const authorizationLink = config.admin.authLink + userId;
   sendEmail(
     config.admin.email,
@@ -73,6 +73,10 @@ async function create(userParam) {
     throw 'Username "' + userParam.username + '" is already taken';
   }
 
+  if (await User.findOne({email: userParam.email})) {
+    throw 'Email "' + userParam.email + '" already in our systems!';
+  }
+
   const user = new User(userParam);
 
   // hash password
@@ -82,9 +86,10 @@ async function create(userParam) {
   // save user
   return user.save().then(
     () => (
-      askAdminToCompleteActivation(user._id)
+      User.findOne({'email': user.email})
+        .then((x) => askAdminToCompleteActivation(x))
     )
-  );
+  ).catch((err) => console.log(err));  // report error
 }
 
 async function update(id, userParam) {
@@ -92,8 +97,14 @@ async function update(id, userParam) {
 
   // validate
   if (!user) throw 'User not found';
+  if (!user.authorized) throw 'User not authorized';
+
   if (user.username !== userParam.username && await User.findOne({username: userParam.username})) {
     throw 'Username "' + userParam.username + '" is already taken';
+  }
+
+  if (user.email !== userParam.email && await User.findOne({email: userParam.email})) {
+    throw 'Email "' + userParam.email + '" is already taken';
   }
 
   // hash password if it was entered
@@ -111,8 +122,11 @@ async function _delete(id) {
   await User.findByIdAndRemove(id);
 }
 
+/**
+ * Reset by email
+ */
 async function resetPassword(userEmail) {
-  const user = await User.findOne({'email': userEmail});  // the first found
+  const user = await User.findOne({email: userEmail});  // the first found
   if (user) {
     const newPassword = getRandomPassword();
 
