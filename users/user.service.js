@@ -1,9 +1,12 @@
-﻿const config = require('config.json');
+﻿const config = require('../config.json');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const db = require('_helpers/db');
+const db = require('../_helpers/db');
 const password = require('secure-random-password');
-const {sendEmail, getMessageOnResetPassword} = require("../_helpers/email");
+const {
+  sendEmail, getMessageOnResetPassword, getMessageOnAccountActivation,
+  getMessageOnAccountActivationRequest
+} = require("../_helpers/email");
 
 const User = db.User;
 
@@ -16,7 +19,15 @@ module.exports = {
   update,
   delete: _delete,
   resetPassword,
+  authorizeNewUser
 };
+
+function getRandomPassword() {
+  return password.randomPassword({
+    length: 32,
+    characters: password.lower + password.upper + password.digits
+  });
+}
 
 async function authenticate({username, password}) {
   const user = await User.findOne({username});
@@ -47,6 +58,15 @@ async function getById(id) {
   return await User.findById(id).select('-hash');
 }
 
+async function askAdminToCompleteActivation(userId) {
+  const authorizationLink = config.admin.authLink + userId;
+  sendEmail(
+    config.admin.email,
+    config.emails.titles.accountActivationRequest,
+    getMessageOnAccountActivationRequest(user, authorizationLink)
+  )
+}
+
 async function create(userParam) {
   // validate
   if (await User.findOne({username: userParam.username})) {
@@ -56,12 +76,15 @@ async function create(userParam) {
   const user = new User(userParam);
 
   // hash password
-  if (userParam.password) {
-    user.hash = bcrypt.hashSync(userParam.password, 10);
-  }
+  const newPassword = getRandomPassword();
+  user.hash = bcrypt.hashSync(newPassword, 10);
 
   // save user
-  await user.save();
+  return user.save().then(
+    () => (
+      askAdminToCompleteActivation(user._id)
+    )
+  );
 }
 
 async function update(id, userParam) {
@@ -91,23 +114,34 @@ async function _delete(id) {
 async function resetPassword(userEmail) {
   const user = await User.findOne({'email': userEmail});  // the first found
   if (user) {
-    const newPassword = password.randomPassword({
-      length: 32,
-      characters: password.lower + password.upper + password.digits
-    });
+    const newPassword = getRandomPassword();
 
     update(
       user._id, {'password': newPassword}
-    );
-
-    console.log('updated ', user.username, 'with new password: ', newPassword);
-
-    sendEmail(
-      userEmail,
-      'EOS | Password reset',
-      getMessageOnResetPassword(user, newPassword, 'https://eos.sns.it/login', 'https://eos.sns.it/me', 'andrei.mesigner@sns.it')
-    );
-
-    console.log('sent email to', userEmail)
+    )
+      .then(() => sendEmail(
+        userEmail,
+        config.emails.titles.passwordReset,
+        getMessageOnResetPassword(user, newPassword, config.frontend.loginUrl, config.frontend.userUrl, config.admin.email)
+      ))
+      .catch(err => console.err(err));  // todo report error
   }
+}
+
+async function notifyUserOfAuthorization(userId, newPassword) {
+  const user = await User.findById(userId);
+  sendEmail(
+    user.email,
+    config.emails.titles.accountActivation,
+    getMessageOnAccountActivation(user, newPassword, config.frontend.loginUrl, config.frontend.userUrl, config.admin.email)
+  )
+}
+
+async function authorizeNewUser(userId) {
+  const newPassword = getRandomPassword;
+
+  return update(userId, {'authorized': true, 'password': newPassword})
+    .then(() => (
+      notifyUserOfAuthorization(userId, newPassword)
+    ));
 }

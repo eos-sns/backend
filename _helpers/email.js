@@ -1,10 +1,12 @@
-const config = require('config.json');
+const config = require('../config.json');
 const nodemailer = require('nodemailer');
 const util = require('util');
 
 module.exports = {
   sendEmail,
-  getMessageOnResetPassword
+  getMessageOnResetPassword,
+  getMessageOnAccountActivation,
+  getMessageOnAccountActivationRequest
 };
 
 function _getTransporter() {
@@ -39,6 +41,27 @@ function getMessageOnResetPassword(user, newPassword, loginLink, editPasswordLin
     'this is your new password: <strong>%s</strong>.</br></br></br></br>' +
     'Login <a href="%s">here</a> and change it <a href="%s">here</a>.</br></br></br></br>' +
     'If you haven\'t asked for a password change, please report it to <a href="mailto:%s">%s</a></br></br></br></br>' +
+    '%s' +
+    '</p>',
+    user.firstName, user.lastName, newPassword, loginLink, editPasswordLink, reportEmail, reportEmail, getSignature()
+  );
+}
+
+function getMessageOnAccountActivationRequest(user, authorizationLink) {
+  return util.format(
+    '<p>Dear admin,</br></br></br></br>' +
+    '%s %s (%s) has requested account activation. Follow <a href="%s">this link</a> to grant authorization.' +
+    '%s</p>',
+    user.firstName, user.lastName, user.email, authorizationLink, getSignature()
+  );
+}
+
+function getMessageOnAccountActivation(user, newPassword, loginLink, editPasswordLink, reportEmail) {
+  return util.format(
+    '<p>Dear %s %s,</br></br></br></br>' +
+    'your account has been activated! This is your new password: <strong>%s</strong>.</br></br></br></br>' +
+    'Login <a href="%s">here</a> and change it <a href="%s">here</a>.</br></br></br></br>' +
+    'If you haven\'t asked for a account activation, please report it to <a href="mailto:%s">%s</a></br></br></br></br>' +
     '%s' +
     '</p>',
     user.firstName, user.lastName, newPassword, loginLink, editPasswordLink, reportEmail, reportEmail, getSignature()
