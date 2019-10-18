@@ -23,7 +23,8 @@
     "nodemailer": "^6.3.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "rootpath": "^0.1.2"
+    "rootpath": "^0.1.2",
+    "secure-random-password": "^0.2.1"
   },
   "devDependencies": {
     "depcheck": "^0.8.3",

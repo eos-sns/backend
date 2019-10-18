@@ -1,9 +1,10 @@
 const config = require('config.json');
 const nodemailer = require('nodemailer');
+const util = require('util');
 
 module.exports = {
   sendEmail,
-  getMessageOnStartDownload
+  getMessageOnResetPassword
 };
 
 function _getTransporter() {
@@ -28,6 +29,18 @@ function sendEmail(to, subject, htmlMsg) {
   return transporter.sendMail(mailOptions);
 }
 
-function getMessageOnStartDownload(user, res) {
-  return '<p>wow! </p><strong>this is strong</strong>';
+function getSignature() {
+  return '</br></br></br></br>---</br></br></br></br>EOS developers'
+}
+
+function getMessageOnResetPassword(user, newPassword, loginLink, editPasswordLink, reportEmail) {
+  return util.format(
+    '<p>Hi! %s %s,</br></br></br></br>' +
+    'this is your new password: <strong>%s</strong>.</br></br></br></br>' +
+    'Login <a href="%s">here</a> and change it <a href="%s">here</a>.</br></br></br></br>' +
+    'If you haven\'t asked for a password change, please report it to <a href="mailto:%s">%s</a></br></br></br></br>' +
+    '%s' +
+    '</p>',
+    user.firstName, user.lastName, newPassword, loginLink, editPasswordLink, reportEmail, reportEmail, getSignature()
+  );
 }

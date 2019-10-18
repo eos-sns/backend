@@ -1,19 +1,24 @@
 ﻿const express = require('express');
 const router = express.Router();
 const userService = require('./user.service');
-const authorize = require('_helpers/authorize');
-const Role = require('_helpers/role');
-const db = require('_helpers/db');
-const User = db.User;
+const authorize = require('../_helpers/authorize');
+const Role = require('../_helpers/role');
 
 // routes
-router.post('/authenticate', authenticate); // public
-router.post('/register', register); // public
-router.get('/', authorize(Role.Admin), getAll); // admin only
-router.get('/current', authorize(), getCurrent); // just authenticated users
-router.get('/:id', authorize(), getById); // just authenticated users
-router.put('/:id', authorize(), update); // just authenticated users
-router.delete('/:id', authorize(), _delete); // just authenticated users
+
+// public
+router.post('/authenticate', authenticate);
+router.post('/register', register);
+router.post('/resetPassword', resetPassword);
+
+// just authenticated users
+router.get('/current', authorize(), getCurrent);
+router.get('/:id', authorize(), getById);
+router.put('/:id', authorize(), update);
+router.delete('/:id', authorize(), _delete);
+
+// admin only
+router.get('/', authorize(Role.Admin), getAll);
 
 module.exports = router;
 
@@ -25,6 +30,12 @@ function authenticate(req, res, next) {
 
 function register(req, res, next) {
   userService.create(req.body)
+    .then(() => res.json({}))
+    .catch(err => next(err));
+}
+
+function resetPassword(req, res, next) {
+  userService.resetPassword(req.body['email'])
     .then(() => res.json({}))
     .catch(err => next(err));
 }

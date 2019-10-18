@@ -2,6 +2,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('_helpers/db');
+const password = require('secure-random-password');
+const {sendEmail, getMessageOnResetPassword} = require("../_helpers/email");
+
 const User = db.User;
 
 module.exports = {
@@ -11,7 +14,8 @@ module.exports = {
   getByReq,
   create,
   update,
-  delete: _delete
+  delete: _delete,
+  resetPassword,
 };
 
 async function authenticate({username, password}) {
@@ -82,4 +86,28 @@ async function update(id, userParam) {
 
 async function _delete(id) {
   await User.findByIdAndRemove(id);
+}
+
+async function resetPassword(userEmail) {
+  const user = await User.findOne({'email': userEmail});  // the first found
+  if (user) {
+    const newPassword = password.randomPassword({
+      length: 32,
+      characters: password.lower + password.upper + password.digits
+    });
+
+    update(
+      user._id, {'password': newPassword}
+    );
+
+    console.log('updated ', user.username, 'with new password: ', newPassword);
+
+    sendEmail(
+      userEmail,
+      'EOS | Password reset',
+      getMessageOnResetPassword(user, newPassword, 'https://eos.sns.it/login', 'https://eos.sns.it/me', 'andrei.mesigner@sns.it')
+    );
+
+    console.log('sent email to', userEmail)
+  }
 }
