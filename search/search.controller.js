@@ -1,13 +1,15 @@
 ﻿const express = require('express');
 const router = express.Router();
 const authorize = require('../_helpers/authorize');
-const {searchByParams} = require('./search.service');
+const {searchByParams, estimateByParams} = require('./search.service');
 const {getByReq, update} = require('../users/user.service');
 
 // routes
 
 // just authenticated users
 router.post('/', authorize(), search);
+router.put('/', authorize(), estimate);
+
 
 module.exports = router;
 
@@ -37,7 +39,7 @@ function onDownloadData(req, downloadResponse, next) {
 }
 
 function search(req, res, next) {
-  let searchData = req.body;
+  const searchData = req.body;
 
   getUserData(req).then(
     data => {
@@ -58,4 +60,13 @@ function search(req, res, next) {
       next(err);
     }
   )
+}
+
+function estimate(req, res, next) {
+  const searchData = req.body;
+  estimateByParams(searchData)
+    .then(response => {
+      res.json(response);
+    })
+    .catch(err => next(err));
 }
