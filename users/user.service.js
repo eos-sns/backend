@@ -143,7 +143,7 @@ async function _delete(id) {
  */
 async function resetPassword(userEmail) {
   const user = await User.findOne({email: userEmail});  // the first found
-  if (user) {
+  if (user && user.authorized) {
     const newPassword = getRandomPassword();
 
     update(
