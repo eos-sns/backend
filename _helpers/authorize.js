@@ -1,6 +1,6 @@
 const expressJwt = require('express-jwt');
 const {secret} = require('config.json');
-const {getByReq} = require('../users/user.service');
+const {getCurrentUserReq} = require('../users/user.service');
 const UNAUTHORIZED_MSG = {message: 'Unauthorized'};
 
 module.exports = authorize;
@@ -23,7 +23,7 @@ function authorize(roles = []) {
 
     // authorize based on user role
     async (req, res, next) => {
-      getByReq(req)
+      getCurrentUserReq(req)
         .then(user => {
           const inValidRole = isUnauthorized(user, roles);
           if (inValidRole || !user) {

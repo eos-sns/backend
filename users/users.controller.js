@@ -15,10 +15,10 @@ router.post('/resetPassword', resetPassword);
 router.get('/current', authorize(), getCurrent);
 router.get('/:id', authorize(), getById);
 router.put('/:id', authorize(), update);
-router.delete('/:id', authorize(), _delete);
 
 // admin only
 router.get('/', authorize(Role.Admin), getAll);
+router.delete('/:id', authorize(Role.Admin), _delete);
 
 module.exports = router;
 
@@ -58,13 +58,15 @@ function getCurrent(req, res, next) {
  * be false in all other cases.
  */
 async function _isAuthorized(req) {
-  const currentUser = userService.getIdCurrentReq(req);
-  const otherUserId = userService.getIdReq(req);
+  userService.getCurrentUserReq(req)
+    .then((currentUser) => {
+      const otherUserId = userService.getIdReq(req);
+      const currentUserIsAdmin = currentUser.role === Role.Admin;
+      const sameUsers = (currentUser._id === otherUserId);
 
-  const currentUserIsAdmin = currentUser.role === Role.Admin;
-  const sameUsers = (currentUser._id === otherUserId);
-
-  return (sameUsers || currentUserIsAdmin);
+      return (sameUsers || currentUserIsAdmin);
+    })
+    .catch(() => (false))  // todo report
 }
 
 function getById(req, res, next) {
@@ -74,21 +76,26 @@ function getById(req, res, next) {
 }
 
 function update(req, res, next) {
-  if (!_isAuthorized(req)) {
-    return res.status(401).json({message: 'Unauthorized'});
-  }
-
-  userService.update(req.params.id, req.body)
-    .then(() => res.json({}))
-    .catch(err => next(err));
+  _isAuthorized(req)
+    .then(() => {
+      const _userIdToEdit = req.params.id;
+      userService.update(_userIdToEdit, req.body)
+        .then(() => res.json({}))
+        .catch(err => next(err));
+    })
+    .catch(() => {
+      res.status(401).json({message: 'Unauthorized'})
+    });
 }
 
 function _delete(req, res, next) {
-  if (!_isAuthorized(req)) {
-    return res.status(401).json({message: 'Unauthorized'});
-  }
-
-  userService.delete(req.params.id)
-    .then(() => res.json({}))
-    .catch(err => next(err));
+  !_isAuthorized(req)
+    .then(() => {
+      userService.delete(userService.getIdReq(req))
+        .then(() => res.json({}))
+        .catch(err => next(err))
+    })
+    .catch(() => {
+      res.status(401).json({message: 'Unauthorized'})
+    });
 }

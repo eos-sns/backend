@@ -19,8 +19,8 @@ module.exports = {
   update,
   delete: _delete,
   resetPassword,
-  getIdCurrentReq,
-  getIdReq
+  getCurrentUserReq,
+  getIdReq,
 };
 
 function getRandomPassword() {
@@ -56,6 +56,11 @@ function getIdCurrentReq(req) {
 
 async function getByReq(req) {
   const _id = getIdReq(req);
+  return getById(_id);
+}
+
+async function getCurrentUserReq(req) {
+  const _id = getIdCurrentReq(req);
   return getById(_id);
 }
 
