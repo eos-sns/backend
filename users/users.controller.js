@@ -19,7 +19,6 @@ router.delete('/:id', authorize(), _delete);
 
 // admin only
 router.get('/', authorize(Role.Admin), getAll);
-router.get('/authorizeNewUser/:id', authorize(Role.Admin), authorizeNewUser);
 
 module.exports = router;
 
@@ -59,8 +58,8 @@ function getCurrent(req, res, next) {
  * be false in all other cases.
  */
 async function _isAuthorized(req) {
-  const currentUser = userService.getByReq(req);  // find in db
-  const otherUserId = parseInt(req.params.id);
+  const currentUser = userService.getIdCurrentReq(req);
+  const otherUserId = userService.getIdReq(req);
 
   const currentUserIsAdmin = currentUser.role === Role.Admin;
   const sameUsers = (currentUser._id === otherUserId);
@@ -91,15 +90,5 @@ function _delete(req, res, next) {
 
   userService.delete(req.params.id)
     .then(() => res.json({}))
-    .catch(err => next(err));
-}
-
-function authorizeNewUser(req, res, next) {
-  if (!_isAuthorized(req)) {
-    return res.status(401).json({message: 'Unauthorized'});
-  }
-
-  userService.authorizeNewUser(req.params.id)
-    .then(() => res.json({'Result': 'authorized'}))
     .catch(err => next(err));
 }

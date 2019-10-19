@@ -19,7 +19,8 @@ module.exports = {
   update,
   delete: _delete,
   resetPassword,
-  authorizeNewUser
+  getIdCurrentReq,
+  getIdReq
 };
 
 function getRandomPassword() {
@@ -46,6 +47,10 @@ async function getAll() {
 }
 
 function getIdReq(req) {
+  return req.params.id;
+}
+
+function getIdCurrentReq(req) {
   return req.user.sub;
 }
 
@@ -59,7 +64,7 @@ async function getById(id) {
 }
 
 async function askAdminToCompleteActivation(user) {
-  const authorizationLink = config.admin.authLink + userId;
+  const authorizationLink = config.admin.authLink + user._id;
   sendEmail(
     config.admin.email,
     config.emails.titles.accountActivationRequest,
@@ -74,7 +79,7 @@ async function create(userParam) {
   }
 
   if (await User.findOne({email: userParam.email})) {
-    throw 'Email "' + userParam.email + '" already in our systems!';
+    throw 'Email "' + userParam.email + '" is already taken';
   }
 
   const user = new User(userParam);
@@ -97,7 +102,6 @@ async function update(id, userParam) {
 
   // validate
   if (!user) throw 'User not found';
-  if (!user.authorized) throw 'User not authorized';
 
   if (user.username !== userParam.username && await User.findOne({username: userParam.username})) {
     throw 'Username "' + userParam.username + '" is already taken';
@@ -105,6 +109,13 @@ async function update(id, userParam) {
 
   if (user.email !== userParam.email && await User.findOne({email: userParam.email})) {
     throw 'Email "' + userParam.email + '" is already taken';
+  }
+
+  // user has been just authorized
+  if (!user.authorized && userParam.authorized) {
+    const newPassword = getRandomPassword();  // create a new password
+    userParam.password = newPassword;
+    await notifyUserOfAuthorization(user._id, newPassword);
   }
 
   // hash password if it was entered
@@ -149,13 +160,4 @@ async function notifyUserOfAuthorization(userId, newPassword) {
     config.emails.titles.accountActivation,
     getMessageOnAccountActivation(user, newPassword, config.frontend.loginUrl, config.frontend.userUrl, config.admin.email)
   )
-}
-
-async function authorizeNewUser(userId) {
-  const newPassword = getRandomPassword;
-
-  return update(userId, {'authorized': true, 'password': newPassword})
-    .then(() => (
-      notifyUserOfAuthorization(userId, newPassword)
-    ));
 }

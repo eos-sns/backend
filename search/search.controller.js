@@ -1,6 +1,6 @@
 ﻿const express = require('express');
 const router = express.Router();
-const authorize = require('_helpers/authorize');
+const authorize = require('../_helpers/authorize');
 const {searchByParams} = require('./search.service');
 const {getByReq, update} = require('../users/user.service');
 
