@@ -16,11 +16,7 @@ function searchByParams(params) {
 }
 
 function estimateByParams(params) {
-  return Promise.resolve({
-    nSimulations: Math.random(),
-    mbSize: Math.random(),
-  });
-  /* todo return rp.get('http://localhost:9900', {
+  return rp.put('http://localhost:9900', {
     json: params
-  }); */
+  });
 }
