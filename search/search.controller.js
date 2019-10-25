@@ -2,7 +2,7 @@
 const router = express.Router();
 const authorize = require('../_helpers/authorize');
 const {searchByParams, estimateByParams} = require('./search.service');
-const {getByReq, update} = require('../users/user.service');
+const {getByReq, getCurrentUserReq, update} = require('../users/user.service');
 
 // routes
 
@@ -15,7 +15,7 @@ module.exports = router;
 
 function getUserData(req) {
   return new Promise(function (resolve, reject) {
-    getByReq(req)
+    getCurrentUserReq(req)
       .then(user => {
         const data = {
           "email": user["email"],
@@ -30,10 +30,7 @@ function getUserData(req) {
 function onDownloadData(req, downloadResponse, next) {
   getByReq(req)
     .then(user => {
-      const numDownloads = user.numDownloads;
-      update(user._id, {
-        numDownloads: numDownloads + 1
-      }); // todo update mbDownloaded. check if max qty have been overcome
+      // todo update mbDownloaded. check if max qty have been overcome
     })
     .catch(err => next(err));
 }
